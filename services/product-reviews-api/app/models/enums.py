@@ -8,4 +8,4 @@ class ReviewStatus(str, Enum):
 class PhotoStatus(str, Enum):
     PENDING = "pending"
     APPROVED = "approved"
-    REJECTED = "rejected" 
+    REJECTED = "rejected"

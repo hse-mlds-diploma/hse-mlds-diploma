@@ -30,4 +30,4 @@ async def update_review_status(review_id: int, status: ReviewStatus):
     try:
         return review_service.update_review_status(review_id, status)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) 
+        raise HTTPException(status_code=404, detail=str(e))
