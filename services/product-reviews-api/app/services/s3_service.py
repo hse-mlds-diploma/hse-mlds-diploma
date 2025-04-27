@@ -1,0 +1,39 @@
+import boto3
+from botocore.config import Config
+from fastapi import UploadFile
+import uuid
+from typing import Optional
+import os
+
+class S3Service:
+    def __init__(self):
+        self.s3_client = boto3.client(
+            's3',
+            endpoint_url=os.getenv('S3_ENDPOINT'),
+            aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+            aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
+            config=Config(signature_version='s3v4'),
+            region_name='us-east-1'
+        )
+        self.bucket_name = os.getenv('S3_BUCKET')
+        
+        try:
+            self.s3_client.head_bucket(Bucket=self.bucket_name)
+        except:
+            self.s3_client.create_bucket(Bucket=self.bucket_name)
+
+    async def upload_file(self, file: UploadFile) -> Optional[str]:
+        try:
+            file_extension = file.filename.split('.')[-1]
+            file_name = f"{uuid.uuid4()}.{file_extension}"
+            
+            self.s3_client.upload_fileobj(
+                file.file,
+                self.bucket_name,
+                file_name
+            )
+            
+            return file_name
+        except Exception as e:
+            print(f"Error uploading file: {e}")
+            return None 
