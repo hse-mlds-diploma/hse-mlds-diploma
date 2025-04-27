@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 from app.routers import reviews, images
 from app.database import engine, Base
 

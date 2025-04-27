@@ -27,7 +27,6 @@ class ReviewService:
     def create_review(self, review: ReviewCreate) -> Review:
         db = self._get_db()
         try:
-            # Create review
             db_review = Review(
                 text=review.text,
                 rating=review.rating,
@@ -39,7 +38,6 @@ class ReviewService:
             db.commit()
             db.refresh(db_review)
             
-            # Link photos to review if provided
             if review.photo_ids:
                 for photo_id in review.photo_ids:
                     photo = db.query(ReviewPhoto).filter(ReviewPhoto.id == photo_id).first()
@@ -48,7 +46,9 @@ class ReviewService:
                     photo.review_id = db_review.id
                     photo.updated_at = datetime.now()
             
-            # Send event to Kafka
+            db.commit()
+            db.refresh(db_review)
+
             review_data = {
                 'id': db_review.id,
                 'text': db_review.text,
@@ -58,9 +58,7 @@ class ReviewService:
                 'created_at': db_review.created_at
             }
             self._kafka_producer.send_review_event(review_data)
-            
-            db.commit()
-            db.refresh(db_review)
+
             return db_review
         finally:
             self._db_manager.close_session()
