@@ -7,6 +7,7 @@ from app.models.enums import ReviewStatus
 from app.schemas.review import ReviewCreate
 from app.kafka_producer import KafkaProducerService
 from app.database import DatabaseManager
+import os
 
 
 class ReviewService:
@@ -38,6 +39,7 @@ class ReviewService:
             db.commit()
             db.refresh(db_review)
             
+            photo_urls = []
             if review.photo_ids:
                 for photo_id in review.photo_ids:
                     photo = db.query(ReviewPhoto).filter(ReviewPhoto.id == photo_id).first()
@@ -45,6 +47,9 @@ class ReviewService:
                         raise ValueError(f"Photo with id {photo_id} not found")
                     photo.review_id = db_review.id
                     photo.updated_at = datetime.now()
+                    # Generate public URL for the photo
+                    photo_url = photo.photo_url
+                    photo_urls.append(photo_url)
             
             db.commit()
             db.refresh(db_review)
@@ -57,7 +62,8 @@ class ReviewService:
                 'status': db_review.status,
                 'created_at': db_review.created_at
             }
-            self._kafka_producer.send_review_event(review_data)
+            print('photo_urls', photo_urls)
+            self._kafka_producer.send_review_event(review_data, photo_urls)
 
             return db_review
         finally:
