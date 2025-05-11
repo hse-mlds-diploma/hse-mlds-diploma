@@ -24,7 +24,7 @@ jobs:
     - name: Build and push Docker image
       run: |
         export sha_short=$(git rev-parse --short ${GITHUB_SHA})
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/product-review-api:$sha_short .
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/product-review-api:$sha_short services/product-reviews-api
         docker push ${{ secrets.DOCKER_USERNAME }}/product-review-api:$sha_short
 
   deploy:
