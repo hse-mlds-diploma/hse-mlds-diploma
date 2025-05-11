@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'services/product-review-api/**'
+      - 'services/product-reviews-api/**'
 
 jobs:
   build:
