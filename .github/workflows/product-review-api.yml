@@ -1,4 +1,4 @@
-name: CI for product-review-api
+name: CI for product-reviews-api
 
 on:
   push:
@@ -24,8 +24,8 @@ jobs:
     - name: Build and push Docker image
       run: |
         export sha_short=$(git rev-parse --short ${GITHUB_SHA})
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/product-review-api:$sha_short services/product-reviews-api
-        docker push ${{ secrets.DOCKER_USERNAME }}/product-review-api:$sha_short
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/product-reviews-api:$sha_short services/product-reviews-api
+        docker push ${{ secrets.DOCKER_USERNAME }}/product-reviews-api:$sha_short
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,26 +50,26 @@ jobs:
           
       - name: Generate Kubernetes Manifests with Helm
         env:
-          NAMESPACE: product-review-api
+          NAMESPACE: product-reviews-api
           IMAGE_REPO: hotspurs/
-          IMAGE_NAME: product-review-api
+          IMAGE_NAME: product-reviews-api
         run: |
           cd helm
           export sha_short=$(git rev-parse --short ${GITHUB_SHA})
-          helm template release product-review-api --debug --set namespace=${NAMESPACE}, --set image.repository=${IMAGE_REPO}${IMAGE_NAME}, --set image.tag=$sha_short --output-dir ./..
+          helm template release product-reviews-api --debug --set namespace=${NAMESPACE}, --set image.repository=${IMAGE_REPO}${IMAGE_NAME}, --set image.tag=$sha_short --output-dir ./..
 
       - name: Update ArgoCD Manifests
         run: |
           cd argocd
           export sha_short=$(git rev-parse --short ${GITHUB_SHA})
           cd ..
-          mkdir -p argocd/manifests/apps/product-review-api
-          rm -rf argocd/manifests/apps/product-review-api/*
-          mv ./product-review-api/templates/* argocd/manifests/apps/product-review-api/
+          mkdir -p argocd/manifests/apps/product-reviews-api
+          rm -rf argocd/manifests/apps/product-reviews-api/*
+          mv ./product-reviews-api/templates/* argocd/manifests/apps/product-reviews-api/
           git config --global user.email "vlvldubov@edu.hse.ru"
           git config --global user.name "CI_CD Bot"
           cd argocd
           git add .
-          git commit -m "Update product-review-api commit ${sha_short}"
+          git commit -m "Update product-reviews-api commit ${sha_short}"
           git remote set-url origin https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@github.com/hse-mlds-diploma/argocd.git
           git push origin main
