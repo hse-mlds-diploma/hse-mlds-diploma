@@ -26,3 +26,50 @@ jobs:
         export sha_short=$(git rev-parse --short ${GITHUB_SHA})
         docker build -t ${{ secrets.DOCKER_USERNAME }}/product-review-api:$sha_short .
         docker push ${{ secrets.DOCKER_USERNAME }}/product-review-api:$sha_short
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+
+      - name: Clone Helm Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'hse-mlds-diploma/helm'
+          path: ./helm
+          token: ${{ secrets.PAT }}
+
+      - name: Clone ArgoCD Repository    
+        uses: actions/checkout@v4
+        with:
+          repository: 'hse-mlds-diploma/argocd'
+          path: ./argocd
+          token: ${{ secrets.TARGET_REPO_TOKEN }}
+          
+      - name: Generate Kubernetes Manifests with Helm
+        env:
+          NAMESPACE: product-review-api
+          IMAGE_REPO: hotspurs/
+          IMAGE_NAME: product-review-api
+        run: |
+          cd helm
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          helm template release product-review-api --debug --set namespace=${NAMESPACE}, --set image.repository=${IMAGE_REPO}${IMAGE_NAME}, --set image.tag=$sha_short --output-dir ./..
+
+      - name: Update ArgoCD Manifests
+        run: |
+          cd argocd
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          cd ..
+          mkdir -p argocd/manifests/apps/product-review-api
+          rm -rf argocd/manifests/apps/product-review-api/*
+          mv ./product-review-api/templates/* argocd/manifests/apps/product-review-api/
+          git config --global user.email "vlvldubov@edu.hse.ru"
+          git config --global user.name "CI_CD Bot"
+          cd argocd
+          git add .
+          git commit -m "Update product-review-api commit ${sha_short}"
+          git remote set-url origin https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@github.com/hse-mlds-diploma/argocd.git
+          git push origin main
