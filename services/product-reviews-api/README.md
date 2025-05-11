@@ -1,5 +1,4 @@
 # Product Reviews API
-
 A FastAPI-based service for managing product reviews.
 
 ## Local Development Setup
