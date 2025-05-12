@@ -2,6 +2,7 @@
 A FastAPI-based service for managing product reviews.
 
 ## Local Development Setup
+
 ### Option 1: Manual Setup
 
 1. Create a virtual environment (recommended):
