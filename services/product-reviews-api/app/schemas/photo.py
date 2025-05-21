@@ -2,12 +2,15 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+
 class PhotoBase(BaseModel):
     photo_url: str
     review_id: int
 
+
 class PhotoCreate(PhotoBase):
     pass
+
 
 class PhotoResponse(PhotoBase):
     id: int

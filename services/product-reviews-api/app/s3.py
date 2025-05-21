@@ -7,6 +7,7 @@ S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "your-access-key")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "your-secret-key")
 S3_BUCKET = os.getenv("S3_BUCKET", "product-reviews-api")
 
+
 @lru_cache()
 def get_s3_client():
     return boto3.client(

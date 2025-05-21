@@ -7,7 +7,6 @@ from app.models.enums import ReviewStatus
 from app.schemas.review import ReviewCreate
 from app.kafka_producer import KafkaProducerService
 from app.database import DatabaseManager
-import os
 
 
 class ReviewService:
@@ -38,7 +37,7 @@ class ReviewService:
             db.add(db_review)
             db.commit()
             db.refresh(db_review)
-            
+
             photo_urls = []
             if review.photo_ids:
                 for photo_id in review.photo_ids:
@@ -50,7 +49,7 @@ class ReviewService:
                     # Generate public URL for the photo
                     photo_url = photo.photo_url
                     photo_urls.append(photo_url)
-            
+
             db.commit()
             db.refresh(db_review)
 
@@ -100,4 +99,4 @@ class ReviewService:
 
     def __del__(self):
         if self._kafka_producer:
-            self._kafka_producer.close() 
+            self._kafka_producer.close()

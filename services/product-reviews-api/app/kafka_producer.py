@@ -6,6 +6,7 @@ import os
 
 load_dotenv()
 
+
 class KafkaProducerService:
     def __init__(self):
         self.bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
@@ -29,7 +30,7 @@ class KafkaProducerService:
             'photo_urls': photo_urls or [],
             'event_type': 'REVIEW_CREATED'
         }
-        
+
         self.producer.send(self.topic, value=event)
         self.producer.flush()
 

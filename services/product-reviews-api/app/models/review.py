@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from app.database import Base
 from app.models.enums import ReviewStatus
 
+
 class Review(Base):
     __tablename__ = "reviews"
 

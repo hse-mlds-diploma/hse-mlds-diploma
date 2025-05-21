@@ -6,7 +6,7 @@ from app.services.s3_service import S3Service
 from app.database import DatabaseManager
 from datetime import datetime
 import os
-from typing import List
+
 
 class ImageService:
     _instance = None
@@ -30,10 +30,10 @@ class ImageService:
             file_name = await self._s3_service.upload_file(file)
             if not file_name:
                 raise ValueError("Failed to upload file")
-            
+
             # Create photo URL
             photo_url = f"{os.getenv('S3_ENDPOINT')}/{self._s3_service.bucket_name}/{file_name}"
-            
+
             # Create photo record in database
             db_photo = ReviewPhoto(
                 photo_url=photo_url,
@@ -43,7 +43,7 @@ class ImageService:
             db.add(db_photo)
             db.commit()
             db.refresh(db_photo)
-            
+
             return {
                 "photo_id": db_photo.id,
                 "photo_url": photo_url
@@ -71,4 +71,4 @@ class ImageService:
             db.refresh(photo)
             return photo
         finally:
-            self._db_manager.close_session() 
+            self._db_manager.close_session()

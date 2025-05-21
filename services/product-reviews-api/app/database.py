@@ -16,6 +16,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
 class DatabaseManager:
     _instance = None
     _session = None
@@ -34,6 +35,7 @@ class DatabaseManager:
         if self._session:
             self._session.close()
             self._session = None
+
 
 def get_db():
     db = SessionLocal()

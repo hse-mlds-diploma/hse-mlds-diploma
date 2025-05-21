@@ -6,12 +6,15 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
+
 class PhotoUploadResponse(BaseModel):
     photo_id: int
     photo_url: str
 
+
 def get_image_service():
     return ImageService()
+
 
 @router.post("/upload", response_model=PhotoUploadResponse)
 async def upload_photo(
@@ -23,6 +26,7 @@ async def upload_photo(
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/{photo_id}", response_model=PhotoResponse)
 def get_photo(
     photo_id: int,
@@ -32,6 +36,7 @@ def get_photo(
         return image_service.get_photo(photo_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
 
 @router.patch("/{photo_id}/status", response_model=PhotoResponse)
 async def update_photo_status(
