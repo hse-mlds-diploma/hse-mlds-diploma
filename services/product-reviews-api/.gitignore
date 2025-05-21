@@ -1,3 +1,4 @@
+venv
 .env
 __pycache__
 *.pyc
@@ -5,3 +6,5 @@ __pycache__
 *.pyd
 *.pyw
 *.pyz
+.pytest_cache
+.idea
