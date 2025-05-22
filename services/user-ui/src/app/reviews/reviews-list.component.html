@@ -1,0 +1,25 @@
+<div *ngIf="loading" style="text-align:center;margin-top:32px;">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="error" style="color:red;text-align:center;">{{ error }}</div>
+<div *ngIf="!loading && !error">
+  <div style="display:flex;flex-direction:column;gap:24px;max-width:600px;margin:auto;">
+    <mat-card *ngFor="let review of reviews">
+      <mat-card-header>
+        <mat-card-title>Оценка: {{ review.rating }}</mat-card-title>
+        <mat-card-subtitle>Статус: {{ review.status }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ review.text }}</p>
+        <div *ngIf="review.photos && review.photos.length" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <img *ngFor="let photo of review.photos" [src]="photo.photo_url" alt="Фото" style="max-width:120px;max-height:120px;border-radius:8px;object-fit:cover;">
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div style="text-align:center;margin:24px;">
+    <button mat-raised-button color="primary" [routerLink]="['/reviews/new']">
+      <mat-icon>add</mat-icon> Оставить отзыв
+    </button>
+  </div>
+</div>

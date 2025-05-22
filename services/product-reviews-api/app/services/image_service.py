@@ -72,3 +72,10 @@ class ImageService:
             return photo
         finally:
             self._db_manager.close_session()
+
+    def get_photos_by_review_id(self, review_id: int):
+        db = self._get_db()
+        try:
+            return db.query(ReviewPhoto).filter(ReviewPhoto.review_id == review_id).all()
+        finally:
+            self._db_manager.close_session()

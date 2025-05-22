@@ -7,6 +7,8 @@ from app.models.enums import ReviewStatus
 from app.schemas.review import ReviewCreate
 from app.kafka_producer import KafkaProducerService
 from app.database import DatabaseManager
+from app.services.image_service import ImageService
+import os
 
 
 class ReviewService:
@@ -68,19 +70,38 @@ class ReviewService:
         finally:
             self._db_manager.close_session()
 
-    def get_reviews(self, skip: int = 0, limit: int = 100) -> List[Review]:
+    def _patch_photo_urls(self, photos):
+        api_base_url = os.getenv('API_BASE_URL', 'http://localhost:8000')
+        for photo in photos:
+            filename = photo.photo_url.split('/')[-1]
+            photo.photo_url = f"{api_base_url}/api/v1/images/file/{filename}"
+        return photos
+
+    def get_reviews(self, skip: int = 0, limit: int = 100):
         db = self._get_db()
         try:
-            return db.query(Review).offset(skip).limit(limit).all()
+            reviews = db.query(Review).offset(skip).limit(limit).all()
+            image_service = ImageService()
+            result = []
+            for review in reviews:
+                photos = image_service.get_photos_by_review_id(review.id)
+                self._patch_photo_urls(photos)
+                review.photos = photos
+                result.append(review)
+            return result
         finally:
             self._db_manager.close_session()
 
-    def get_review(self, review_id: int) -> Review:
+    def get_review(self, review_id: int):
         db = self._get_db()
         try:
             review = db.query(Review).filter(Review.id == review_id).first()
             if review is None:
                 raise ValueError("Review not found")
+            image_service = ImageService()
+            photos = image_service.get_photos_by_review_id(review.id)
+            self._patch_photo_urls(photos)
+            review.photos = photos
             return review
         finally:
             self._db_manager.close_session()

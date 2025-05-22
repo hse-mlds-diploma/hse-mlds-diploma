@@ -3,6 +3,8 @@ from app.models.enums import PhotoStatus
 from app.schemas.photo import PhotoResponse
 from app.services.image_service import ImageService
 from pydantic import BaseModel
+from app.services.s3_service import S3Service
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
@@ -48,3 +50,19 @@ async def update_photo_status(
         return image_service.update_photo_status(photo_id, status)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/bucket-files")
+def list_bucket_files():
+    s3_service = S3Service()
+    files = s3_service.list_bucket_files()
+    return {"files": files}
+
+
+@router.get("/file/{filename}")
+def get_image_file(filename: str):
+    s3_service = S3Service()
+    file_stream, content_type = s3_service.get_file_stream(filename)
+    if file_stream is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    return StreamingResponse(file_stream, media_type=content_type)

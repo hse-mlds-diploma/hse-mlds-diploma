@@ -43,3 +43,20 @@ class S3Service:
         except Exception as e:
             print(f"Error uploading file: {e}")
             return None
+
+    def list_bucket_files(self):
+        try:
+            response = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+            files = [obj['Key'] for obj in response.get('Contents', [])]
+            return files
+        except Exception as e:
+            print(f"Error listing bucket files: {e}")
+            return []
+
+    def get_file_stream(self, filename):
+        try:
+            fileobj = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
+            return fileobj['Body'], fileobj.get('ContentType', 'application/octet-stream')
+        except Exception as e:
+            print(f"Error getting file stream: {e}")
+            return None, None
