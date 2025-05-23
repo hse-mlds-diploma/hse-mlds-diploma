@@ -29,7 +29,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r services/image-moderation-api/requirements.txt
-          pip install -r services/text-moderation-api/requirements-dev.txt
+          pip install -r services/image-moderation-api/requirements-dev.txt
       - name: Lint with flake8
         run: |
           flake8 services/image-moderation-api/main.py --max-line-length=150
@@ -54,7 +54,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r services/image-moderation-api/requirements.txt
-          pip install -r services/text-moderation-api/requirements-dev.txt
+          pip install -r services/image-moderation-api/requirements-dev.txt
       - name: Test (no tests found, placeholder)
         run: |
           echo "No tests found for image-moderation-api. Skipping."
