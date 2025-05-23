@@ -78,7 +78,7 @@ jobs:
         run: |
           cd helm
           export sha_short=$(git rev-parse --short ${GITHUB_SHA})
-          helm template release user-ui --debug --set namespace=${NAMESPACE}, --set image.repository=${IMAGE_REPO}${IMAGE_NAME}, --set image.tag=$sha_short --output-dir ./..
+          helm template release user-ui --debug --set image.repository=${IMAGE_REPO}${IMAGE_NAME}, --set image.tag=$sha_short --output-dir ./..
 
       - name: Update ArgoCD Manifests
         run: |
