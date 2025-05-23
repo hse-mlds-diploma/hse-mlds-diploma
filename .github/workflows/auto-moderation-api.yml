@@ -1,0 +1,123 @@
+name: CI for auto-moderation-api
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/auto-moderation-api/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('services/auto-moderation-api/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r services/auto-moderation-api/requirements.txt
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 services/auto-moderation-api/app --max-line-length=150
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('services/auto-moderation-api/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r services/auto-moderation-api/requirements.txt
+      - name: Test (no tests found, placeholder)
+        run: |
+          echo "No tests found for auto-moderation-api. Skipping."
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push Docker image
+        run: |
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/auto-moderation-api:$sha_short services/auto-moderation-api
+          docker push ${{ secrets.DOCKER_USERNAME }}/auto-moderation-api:$sha_short
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+
+      - name: Clone Helm Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'hse-mlds-diploma/helm'
+          path: ./helm
+          token: ${{ secrets.PAT }}
+
+      - name: Clone ArgoCD Repository    
+        uses: actions/checkout@v4
+        with:
+          repository: 'hse-mlds-diploma/argocd'
+          path: ./argocd
+          token: ${{ secrets.TARGET_REPO_TOKEN }}
+          
+      - name: Generate Kubernetes Manifests with Helm
+        env:
+          NAMESPACE: auto-moderation-api
+          IMAGE_REPO: hotspurs/
+          IMAGE_NAME: auto-moderation-api
+        run: |
+          cd helm
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          helm template release auto-moderation-api --debug --set namespace=${NAMESPACE}, --set image.repository=${IMAGE_REPO}${IMAGE_NAME}, --set image.tag=$sha_short --output-dir ./..
+
+      - name: Update ArgoCD Manifests
+        run: |
+          cd argocd
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          cd ..
+          mkdir -p argocd/manifests/apps/auto-moderation-api
+          rm -rf argocd/manifests/apps/auto-moderation-api/*
+          mv ./auto-moderation-api/templates/* argocd/manifests/apps/auto-moderation-api/
+          git config --global user.email "vlvldubov@edu.hse.ru"
+          git config --global user.name "CI_CD Bot"
+          cd argocd
+          git add .
+          git commit -m "Update auto-moderation-api commit ${sha_short}"
+          git remote set-url origin https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@github.com/hse-mlds-diploma/argocd.git
+          git push origin main 

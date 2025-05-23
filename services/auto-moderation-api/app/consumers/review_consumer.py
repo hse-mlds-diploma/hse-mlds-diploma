@@ -7,8 +7,10 @@ from aiokafka import AIOKafkaProducer
 class ReviewConsumer:
     def __init__(self, moderation_service):
         self.kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+        self.reviews_topic = os.getenv("KAFKA_REVIEWS_TOPIC", "product-reviews-api")
+        self.moderation_results_topic = os.getenv("KAFKA_MODERATION_RESULTS_TOPIC", "moderation-results")
         self.consumer = AIOKafkaConsumer(
-            "product-reviews-api",
+            self.reviews_topic,
             bootstrap_servers=self.kafka_bootstrap_servers,
             group_id="auto-moderation-group",
             value_deserializer=lambda m: json.loads(m.decode('utf-8'))
@@ -32,8 +34,9 @@ class ReviewConsumer:
                 )
                 
                 # Send moderation result to the moderation results topic
+                
                 await self.producer.send_and_wait(
-                    "moderation-results",
+                    self.moderation_results_topic,
                     {
                         "review_id": review_data.get("id"),
                         "moderation_result": moderation_result
