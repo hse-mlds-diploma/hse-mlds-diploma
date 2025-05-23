@@ -70,7 +70,7 @@ class ReviewService:
             self._db_manager.close_session()
 
     def _patch_photo_urls(self, photos):
-        api_base_url = os.getenv('API_BASE_URL', 'http://localhost:8000')
+        api_base_url = os.getenv('API_BASE_URL', '')
         for photo in photos:
             filename = photo.photo_url.split('/')[-1]
             photo.photo_url = f"{api_base_url}/api/v1/images/file/{filename}"
