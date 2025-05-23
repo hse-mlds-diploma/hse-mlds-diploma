@@ -1,6 +1,7 @@
 name: CI for user-ui
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
