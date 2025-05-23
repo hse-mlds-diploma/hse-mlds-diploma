@@ -1,8 +1,8 @@
 from aiokafka import AIOKafkaConsumer
-import json
-import asyncio
-import os
 from aiokafka import AIOKafkaProducer
+import json
+import os
+
 
 class ReviewConsumer:
     def __init__(self, moderation_service):
@@ -27,14 +27,12 @@ class ReviewConsumer:
         try:
             async for msg in self.consumer:
                 review_data = msg.value
-                # Process the review
+
                 moderation_result = await self.moderation_service.moderate_review(
                     review_data.get("text"),
                     review_data.get("photo_urls", [])
                 )
-                
-                # Send moderation result to the moderation results topic
-                
+
                 await self.producer.send_and_wait(
                     self.moderation_results_topic,
                     {
@@ -44,4 +42,4 @@ class ReviewConsumer:
                 )
         finally:
             await self.consumer.stop()
-            await self.producer.stop() 
+            await self.producer.stop()
