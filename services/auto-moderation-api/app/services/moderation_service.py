@@ -4,8 +4,8 @@ import os
 
 class ModerationService:
     def __init__(self):
-        self.text_moderation_url = os.getenv("TEXT_MODERATION_URL", "http://text-moderation:8002/moderate")
-        self.image_moderation_url = os.getenv("IMAGE_MODERATION_URL", "http://image-moderation:8003/moderate")
+        self.text_moderation_url = os.getenv("TEXT_MODERATION_URL", "http://text-moderation-api:8002/moderate")
+        self.image_moderation_url = os.getenv("IMAGE_MODERATION_URL", "http://image-moderation-api:8003/moderate")
 
     async def moderate_review(self, text: str, images: List[str]) -> Dict[str, Any]:
         # Moderate text

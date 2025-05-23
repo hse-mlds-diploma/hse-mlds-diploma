@@ -1,0 +1,96 @@
+name: CI for user-ui
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/user-ui/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('services/user-ui/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install dependencies
+        run: npm ci
+        working-directory: services/user-ui
+      - name: Run tests
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+        working-directory: services/user-ui
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push Docker image
+        run: |
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/user-ui:$sha_short services/user-ui
+          docker push ${{ secrets.DOCKER_USERNAME }}/user-ui:$sha_short
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+
+      - name: Clone Helm Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'hse-mlds-diploma/helm'
+          path: ./helm
+          token: ${{ secrets.PAT }}
+
+      - name: Clone ArgoCD Repository    
+        uses: actions/checkout@v4
+        with:
+          repository: 'hse-mlds-diploma/argocd'
+          path: ./argocd
+          token: ${{ secrets.TARGET_REPO_TOKEN }}
+          
+      - name: Generate Kubernetes Manifests with Helm
+        env:
+          NAMESPACE: user-ui
+          IMAGE_REPO: hotspurs/
+          IMAGE_NAME: user-ui
+        run: |
+          cd helm
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          helm template release user-ui --debug --set namespace=${NAMESPACE}, --set image.repository=${IMAGE_REPO}${IMAGE_NAME}, --set image.tag=$sha_short --output-dir ./..
+
+      - name: Update ArgoCD Manifests
+        run: |
+          cd argocd
+          export sha_short=$(git rev-parse --short ${GITHUB_SHA})
+          cd ..
+          mkdir -p argocd/manifests/apps/user-ui
+          rm -rf argocd/manifests/apps/user-ui/*
+          mv ./user-ui/templates/* argocd/manifests/apps/user-ui/
+          git config --global user.email "vlvldubov@edu.hse.ru"
+          git config --global user.name "CI_CD Bot"
+          cd argocd
+          git add .
+          git commit -m "Update user-ui commit ${sha_short}"
+          git remote set-url origin https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@github.com/hse-mlds-diploma/argocd.git
+          git push origin main 
