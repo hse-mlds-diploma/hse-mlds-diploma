@@ -25,7 +25,7 @@ export class ReviewsListComponent {
 
   fetchReviews() {
     this.loading = true;
-    this.http.get<any[]>('http://localhost:8000/api/v1/reviews')
+    this.http.get<any[]>('/api/v1/reviews')
       .subscribe({
         next: (data) => {
           this.reviews = data;
