@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 from sqlalchemy.orm import Session
 from app.models.review import Review
 from app.models.photo import ReviewPhoto
