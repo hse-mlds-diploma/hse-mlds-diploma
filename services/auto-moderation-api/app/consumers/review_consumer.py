@@ -30,7 +30,7 @@ class ReviewConsumer:
 
                 moderation_result = await self.moderation_service.moderate_review(
                     review_data.get("text"),
-                    review_data.get("photo_urls", [])
+                    review_data.get("photos", [])
                 )
 
                 await self.producer.send_and_wait(

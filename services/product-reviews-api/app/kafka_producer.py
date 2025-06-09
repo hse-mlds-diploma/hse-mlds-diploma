@@ -16,7 +16,7 @@ class KafkaProducerService:
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
 
-    def send_review_event(self, review_data: Dict[str, Any], photo_urls: List[str] = None) -> None:
+    def send_review_event(self, review_data: Dict[str, Any], photos: List[Dict[str, Any]] = None) -> None:
         """
         Send review event to Kafka topic
         """
@@ -27,7 +27,7 @@ class KafkaProducerService:
             'product_id': review_data['product_id'],
             'status': review_data['status'],
             'created_at': review_data['created_at'].isoformat(),
-            'photo_urls': photo_urls or [],
+            'photos': photos or [],
             'event_type': 'REVIEW_CREATED'
         }
 

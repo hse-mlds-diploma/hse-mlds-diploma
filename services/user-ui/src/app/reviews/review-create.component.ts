@@ -43,6 +43,10 @@ export class ReviewCreateComponent {
   }
 
   async submit() {
+    if (!this.review.text || this.review.text.trim() === '') {
+      this.error = 'Поле "Комментарий" обязательно для заполнения';
+      return;
+    }
     this.loading = true;
     this.error = null;
     this.photoIds = [];
@@ -51,7 +55,7 @@ export class ReviewCreateComponent {
         for (const file of this.selectedFiles) {
           const formData = new FormData();
           formData.append('file', file);
-          const res: any = await this.http.post('/api/v1/images/upload', formData).toPromise();
+          const res: any = await this.http.post('http://localhost:8000/api/v1/images/upload', formData).toPromise();
           if (res && res.photo_id) {
             this.photoIds.push(res.photo_id);
           }
@@ -62,7 +66,7 @@ export class ReviewCreateComponent {
         rating: +this.review.rating,
         photo_ids: this.photoIds
       };
-      await this.http.post('/api/v1/reviews', reviewPayload).toPromise();
+      await this.http.post('http://localhost:8000/api/v1/reviews', reviewPayload).toPromise();
       this.success = true;
       this.loading = false;
       setTimeout(() => this.router.navigate(['/reviews']), 1000);

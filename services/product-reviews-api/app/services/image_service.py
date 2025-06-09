@@ -64,7 +64,9 @@ class ImageService:
     def update_photo_status(self, photo_id: int, status: PhotoStatus) -> ReviewPhoto:
         db = self._get_db()
         try:
-            photo = self.get_photo(photo_id)
+            photo = db.query(ReviewPhoto).filter(ReviewPhoto.id == photo_id).first()
+            if photo is None:
+                raise ValueError("Photo not found")
             photo.status = status
             photo.updated_at = datetime.now()
             db.commit()
@@ -79,3 +81,14 @@ class ImageService:
             return db.query(ReviewPhoto).filter(ReviewPhoto.review_id == review_id).all()
         finally:
             self._db_manager.close_session()
+
+    async def handle_moderation_result(self, moderation_results_data):
+        moderation_result = moderation_results_data.get('moderation_result')
+        image_moderation = moderation_result.get('image_moderation')
+
+        if image_moderation:
+            for image in image_moderation:
+                if image.get('approved'):
+                    self.update_photo_status(image.get('id'), PhotoStatus.APPROVED)
+                else:
+                    self.update_photo_status(image.get('id'), PhotoStatus.REJECTED)

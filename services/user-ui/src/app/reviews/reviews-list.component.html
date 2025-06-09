@@ -7,12 +7,30 @@
     <mat-card *ngFor="let review of reviews">
       <mat-card-header>
         <mat-card-title>Оценка: {{ review.rating }}</mat-card-title>
-        <mat-card-subtitle>Статус: {{ review.status }}</mat-card-subtitle>
+        <mat-card-subtitle>
+          Статус:
+          <span [ngClass]="{
+            'status-badge': true,
+            'status-approved': review.status === 'approved',
+            'status-rejected': review.status === 'rejected',
+            'status-other': review.status !== 'approved' && review.status !== 'rejected'
+          }">
+            {{ review.status }}
+          </span>
+        </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         <p>{{ review.text }}</p>
         <div *ngIf="review.photos && review.photos.length" style="display:flex;gap:8px;flex-wrap:wrap;">
-          <img *ngFor="let photo of review.photos" [src]="photo.photo_url" alt="Фото" style="max-width:120px;max-height:120px;border-radius:8px;object-fit:cover;">
+          <img *ngFor="let photo of review.photos"
+               [src]="photo.photo_url"
+               alt="Фото"
+               style="max-width:120px;max-height:120px;border-radius:8px;object-fit:cover;"
+               [ngClass]="{
+                 'photo-approved': photo.status === 'approved',
+                 'photo-rejected': photo.status === 'rejected'
+               }"
+          >
         </div>
       </mat-card-content>
     </mat-card>

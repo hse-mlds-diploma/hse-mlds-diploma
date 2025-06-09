@@ -8,13 +8,17 @@ class ModerationService:
         self.text_moderation_url = os.getenv("TEXT_MODERATION_URL", "http://text-moderation-api:8002/moderate")
         self.image_moderation_url = os.getenv("IMAGE_MODERATION_URL", "http://image-moderation-api:8003/moderate")
 
-    async def moderate_review(self, text: str, images: List[str]) -> Dict[str, Any]:
+    async def moderate_review(self, text: str, images: List[Dict[str, Any]]) -> Dict[str, Any]:
         text_result = await self._moderate_text(text)
 
         image_results = []
-        for image_url in images:
-            image_result = await self._moderate_image(image_url)
-            image_results.append(image_result)
+        for image in images:
+            image_result = await self._moderate_image(image.get("photo_url"))
+            image_results.append({
+                "id": image.get("id"),
+                "photo_url": image.get("photo_url"),
+                "approved": image_result.get("approved", False)
+            })
 
         return {
             "text_moderation": text_result,

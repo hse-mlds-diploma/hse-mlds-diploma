@@ -39,7 +39,7 @@ class ReviewService:
             db.commit()
             db.refresh(db_review)
 
-            photo_urls = []
+            photos = []
             if review.photo_ids:
                 for photo_id in review.photo_ids:
                     photo = db.query(ReviewPhoto).filter(ReviewPhoto.id == photo_id).first()
@@ -49,7 +49,10 @@ class ReviewService:
                     photo.updated_at = datetime.now()
                     # Generate public URL for the photo
                     photo_url = photo.photo_url
-                    photo_urls.append(photo_url)
+                    photos.append({
+                        'id': photo.id,
+                        'photo_url': photo_url
+                    })
 
             db.commit()
             db.refresh(db_review)
@@ -62,8 +65,8 @@ class ReviewService:
                 'status': db_review.status,
                 'created_at': db_review.created_at
             }
-            print('photo_urls', photo_urls)
-            self._kafka_producer.send_review_event(review_data, photo_urls)
+
+            self._kafka_producer.send_review_event(review_data, photos)
 
             return db_review
         finally:
@@ -108,7 +111,9 @@ class ReviewService:
     def update_review_status(self, review_id: int, status: ReviewStatus) -> Review:
         db = self._get_db()
         try:
-            review = self.get_review(review_id)
+            review = db.query(Review).filter(Review.id == review_id).first()
+            if review is None:
+                raise ValueError("Review not found")
             review.status = status
             review.updated_at = datetime.now()
             db.commit()
@@ -116,6 +121,18 @@ class ReviewService:
             return review
         finally:
             self._db_manager.close_session()
+
+    async def handle_moderation_result(self, moderation_result_data):
+        review_id = moderation_result_data.get('review_id')
+        moderation_result = moderation_result_data.get('moderation_result')
+        if not review_id or not moderation_result:
+            raise ValueError("moderation_result_data must contain 'review_id' and 'moderation_result'")
+        text_moderation = moderation_result.get('text_moderation')
+
+        if text_moderation.get('approved'):
+            self.update_review_status(review_id, ReviewStatus.APPROVED)
+        else:
+            self.update_review_status(review_id, ReviewStatus.REJECTED)
 
     def __del__(self):
         if self._kafka_producer:
