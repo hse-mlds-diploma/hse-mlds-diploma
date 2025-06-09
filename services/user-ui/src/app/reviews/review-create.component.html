@@ -6,10 +6,6 @@
     </mat-select>
   </mat-form-field>
   <mat-form-field appearance="outline">
-    <mat-label>User ID</mat-label>
-    <input matInput [(ngModel)]="review.user_id" name="user_id" required>
-  </mat-form-field>
-  <mat-form-field appearance="outline">
     <mat-label>Оценка</mat-label>
     <mat-select [(ngModel)]="review.rating" name="rating">
       <mat-option *ngFor="let r of [1,2,3,4,5]" [value]="r">{{r}}</mat-option>

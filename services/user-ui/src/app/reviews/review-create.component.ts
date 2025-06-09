@@ -20,7 +20,6 @@ import { MatIconModule } from '@angular/material/icon';
 export class ReviewCreateComponent {
   review = {
     product_id: '',
-    user_id: '',
     rating: 5,
     text: ''
   };
@@ -55,7 +54,7 @@ export class ReviewCreateComponent {
         for (const file of this.selectedFiles) {
           const formData = new FormData();
           formData.append('file', file);
-          const res: any = await this.http.post('http://localhost:8000/api/v1/images/upload', formData).toPromise();
+          const res: any = await this.http.post('/api/v1/images/upload', formData).toPromise();
           if (res && res.photo_id) {
             this.photoIds.push(res.photo_id);
           }
@@ -63,10 +62,11 @@ export class ReviewCreateComponent {
       }
       const reviewPayload = {
         ...this.review,
+        user_id: 1,
         rating: +this.review.rating,
         photo_ids: this.photoIds
       };
-      await this.http.post('http://localhost:8000/api/v1/reviews', reviewPayload).toPromise();
+      await this.http.post('/api/v1/reviews', reviewPayload).toPromise();
       this.success = true;
       this.loading = false;
       setTimeout(() => this.router.navigate(['/reviews']), 1000);
