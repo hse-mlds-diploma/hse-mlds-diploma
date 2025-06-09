@@ -1,26 +1,42 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import torch
+from torch import nn
 from PIL import Image
 import requests
 from io import BytesIO
-from transformers import AutoModelForImageClassification
+import clip
 from torchvision import transforms
 
 
 app = FastAPI()
 
 
-MODEL_NAME = "microsoft/resnet-50"
-model = AutoModelForImageClassification.from_pretrained(MODEL_NAME)
+model, preprocess = clip.load("ViT-B/32", device="cpu")
 
-# Define image transforms
+visual_encoder = model.visual
+visual_encoder = model.visual.float()
+for param in visual_encoder.parameters():
+    param.requires_grad = False
+
 transform = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
+    transforms.Resize((224, 224)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize((0.4815, 0.4578, 0.4082), (0.2686, 0.2613, 0.2758))
 ])
+
+
+classifier = nn.Sequential(
+    nn.Linear(512, 256),
+    nn.ReLU(),
+    nn.Dropout(0.2),
+    nn.Linear(256, 3)
+)
+classifier.load_state_dict(torch.load("clip_classifier.pth", map_location="cpu"))
+classifier.to("cpu")
+classifier.eval()
 
 
 class ModerationRequest(BaseModel):
@@ -52,20 +68,12 @@ def predict_image_safety(image: Image.Image) -> dict:
     print('Added batch dimension')
 
     with torch.no_grad():
-        outputs = model(image_tensor)
-        logits = outputs.logits
-        probabilities = torch.softmax(logits, dim=1)
+        features = visual_encoder(image_tensor)
 
-        top5_probs, top5_indices = torch.topk(probabilities[0], 5)
+        outputs = classifier(features)
+        preds = torch.argmax(outputs, dim=1)
 
-        predictions = []
-        for prob, idx in zip(top5_probs, top5_indices):
-            predictions.append({
-                "label": model.config.id2label[idx.item()],
-                "score": prob.item()
-            })
-
-    return predictions
+    return preds.item()
 
 
 @app.post("/moderate")
@@ -76,14 +84,7 @@ async def moderate(request: ModerationRequest):
 
         predictions = predict_image_safety(image)
 
-        UNSAFE_CATEGORIES = {
-            "violence", "weapon", "nudity", "porn", "drug", "alcohol", "tobacco"
-        }
-
-        is_unsafe = any(
-            any(unsafe in pred["label"].lower() for unsafe in UNSAFE_CATEGORIES)
-            for pred in predictions[:3]
-        )
+        is_unsafe = predictions != 1
 
         return {
             "approved": not is_unsafe,
